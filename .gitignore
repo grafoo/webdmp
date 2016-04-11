@@ -66,3 +66,4 @@ config.py
 database
 secret_key
 passwd
+tmp/

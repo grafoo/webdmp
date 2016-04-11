@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+  <section id="editBookmark" class="row">
+    <div class="well">
+      <form id="editBookmarkForm" action="/bookmark" method="post">
+      <div class="form-group">
+        <label for="websiteURL" class="control-label">url</label>
+        <input id="websiteURL" name="url" class="form-control" value="{{page}}">
+      </div>
+     
+      <div class="form-group">
+        <label for="websiteTitle" class="control-label">name</label>
+        <input id="websiteTitle" name="name" type="text" class="form-control" value="{{name}}">
+      </div>
+    
+      <div class="form-group">
+        <label for="tagSearch" class="control-label">tags</label>
+        <select id="tagSearch" name="tag-list"></select>
+      </div>
+        <input class="btn btn-primary pull-right" type="submit" value="edit bookmark">
+      </form>
+    </div>
+  </section>
+
+  <script>
+    $("#tagSearch").selectize({
+      plugins: ['remove_button'],
+      persist: false,
+      maxItems: null,
+      valueField: 'tag',
+      labelField: 'tag',
+      searchField: ['tag'],
+      options: {{options|tojson}}, // e.g. options: [{tag: 'foo'}, {tag: 'bar'}],
+      items: {{items|tojson}}, // e.g. items: ['foo', 'bar'],
+      render: {
+        item: function(item, escape) {
+          return '<div>' +
+            '<span class="tag">' + escape(item.tag) + '</span>' +
+            '</div>';
+        },
+        option: function(item, escape) {
+          return '<div>' +
+            '<span class="tag">' + escape(item.tag) + '</span>' +
+            '</div>';
+        }
+      },
+      create: function(input) {
+        return {tag: input};
+      },
+      load: function(query, callback) {
+        if (!query.length) return callback();
+        $.ajax({
+          url: '/tag?query=' + encodeURIComponent(query),
+          type: 'GET',
+          error: function() {
+            callback();
+          },
+          success: function(result) {
+            var tags = JSON.parse(result);
+            callback(tags);
+          }
+        });	
+      }	
+    });
+  </script>
+{% endblock %}

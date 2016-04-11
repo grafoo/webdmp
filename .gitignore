@@ -60,3 +60,9 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# webdmp
+config.py
+database
+secret_key
+passwd

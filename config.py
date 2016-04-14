@@ -68,7 +68,10 @@ if __name__ == '__main__':
             if sys.argv[1] == 'init':
                 make_secret_key()
                 make_passwd()
-                os.remove('database')
+                try:
+                    os.remove('database')
+                except:
+                    pass
                 init_database()
             elif sys.argv[1] == 'secret_key':
                 make_secret_key()

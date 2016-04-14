@@ -62,7 +62,6 @@ target/
 .ipynb_checkpoints
 
 # webdmp
-config.py
 database
 secret_key
 passwd

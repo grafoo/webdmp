@@ -62,7 +62,7 @@ target/
 .ipynb_checkpoints
 
 # webdmp
-database
+*.db
 secret_key
 passwd
 tmp/

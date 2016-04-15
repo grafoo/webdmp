@@ -28,7 +28,7 @@ source ../bin/activate
 PYTHONPATH=/path/to/webdmp/app/webdmp.py uwsgi \
   --plugin python2 \
   --socket 127.0.0.1:9090 \
-  --module webtag \
+  --module webdmp \
   --callable app \
   -H /path/to/webdmp/app
 ```
@@ -50,10 +50,10 @@ server {
       ssl_prefer_server_ciphers  on;
 
       location / {
-          try_files $uri @webtag;
+          try_files $uri @webdmp;
       }
 
-      location @webtag {
+      location @webdmp {
           include uwsgi_params;
           uwsgi_pass 127.0.0.1:9090;
       }
@@ -77,8 +77,8 @@ socket = 127.0.0.1:9090
 chdir = /path/to/webdmp/app
 plugin = python2
 virtualenv = /path/to/webdmp
-pythonpath = /path/to/webdmp/app/webtag.py
-module = webtag
+pythonpath = /path/to/webdmp/app/webdmp.py
+module = webdmp
 callable = app
 EOF
 ```
@@ -90,7 +90,7 @@ EOF
 
 - copy and paste the content of bookmarklet.js into the url field of a new bookmark
 - hit the newly created bookmarklet on every page you'd like to bookmark
-- create another bookmark for accessing webtag on it's default index page
+- create another bookmark for accessing webdmp on it's default index page
 
 
 ## front end dependencies

@@ -53,7 +53,7 @@ def init_database():
 
 class Config(object):
     DATABASE_TYPE = 'sqlite'
-    DATABASE = 'database'
+    DATABASE = 'webdmp.db'
     SECRET_KEY = read_secret_key()
     PASSWD = read_passwd()
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
                 make_secret_key()
                 make_passwd()
                 try:
-                    os.remove('database')
+                    os.remove('webdmp.db')
                 except:
                     pass
                 init_database()

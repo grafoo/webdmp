@@ -101,6 +101,21 @@ def select_bookmark_tag_id(bookmark_id, tag_id):
     ).fetchone()
 
 
+def make_value_list_query_string(len=0):
+    return ', '.join('?' * len)
+
+
+def select_bookmarks_on_tagnames(tagnames):
+    tagnames_len = len(tagnames)
+    return g.db.execute(
+        '''select b.url, b.name from bookmarks as b
+            join bookmark_tags as bt where b.id = bt.bookmark_id
+            and bt.tag_id in (select id from tags where name in ({0}))
+            group by b.url having count (b.url) = ?'''.format(make_value_list_query_string(tagnames_len)),
+        tuple(tagnames) + (tagnames_len,)
+    ).fetchall()
+
+
 
 @app.before_request
 def before_request():

@@ -15,10 +15,8 @@ import os
 import sqlite3
 
 
-
 app = Flask(__name__)
 app.config.from_object('config.DevelConfig')
-
 
 
 def get_sqlite_database():
@@ -34,8 +32,9 @@ def insert_bookmark(name='', url=''):
     except sqlite3.IntegrityError, e:
         # in case of an existing url return the bookmark id
         # todo: replace this hack in favor of more atomic functions
-        return g.db.execute('select id from bookmarks where url = ?', (url,)).fetchone()[0]
-        print(e)
+        return g.db.execute(
+            'select id from bookmarks where url = ?', (url,)
+        ).fetchone()[0]
     return g.db.execute('select last_insert_rowid()').fetchone()[0]
 
 
@@ -79,18 +78,23 @@ def get_bookmark_record(url=''):
         ).fetchone()[0]
         cursor = g.db.execute(
             '''select name from tags
-                where id in (select tag_id from bookmark_tags where bookmark_id = ?)''',
-            (bookmark_id,)
+                where id in (
+                 select tag_id from bookmark_tags where bookmark_id = ?
+                )
+            ''', (bookmark_id,)
         )
         tags = [{'tag': row[0]} for row in cursor.fetchall()]
         bookmark_tuple = g.db.execute(
             'select name, url from bookmarks where url = ?',
             (url,)
         ).fetchone()
-        bookmark_record = {'name': bookmark_tuple[0], 'url': bookmark_tuple[1], 'tags': tags}
+        bookmark_record = {
+            'name': bookmark_tuple[0],
+            'url': bookmark_tuple[1],
+            'tags': tags
+        }
         return bookmark_record
     except Exception, e:
-        print(e)
         return False
 
 
@@ -107,14 +111,15 @@ def make_value_list_query_string(len=0):
 
 def select_bookmarks_on_tagnames(tagnames):
     tagnames_len = len(tagnames)
-    return g.db.execute(
+    cursor = g.db.execute(
         '''select b.url, b.name from bookmarks as b
             join bookmark_tags as bt where b.id = bt.bookmark_id
             and bt.tag_id in (select id from tags where name in ({0}))
-            group by b.url having count (b.url) = ?'''.format(make_value_list_query_string(tagnames_len)),
+            group by b.url having count (b.url) = ?
+        '''.format(make_value_list_query_string(tagnames_len)),
         tuple(tagnames) + (tagnames_len,)
-    ).fetchall()
-
+    )
+    return [{'url': row[0], 'title': row[1]} for row in cursor.fetchall()]
 
 
 @app.before_request
@@ -129,27 +134,9 @@ def teardown_request(exception):
         db.close()
 
 
-
 @app.route('/')
 def index():
-    if 'url' in request.args:
-        bookmark_record = get_bookmark_record(url=request.args['url'])
-        if bookmark_record:
-            return render_template(
-                'edit_bookmark.html',
-                options=bookmark_record['tags'],
-                items=[item['tag'] for item in bookmark_record['tags']],
-                page=bookmark_record['url'],
-                name=bookmark_record['name']
-            )
-        else:
-            return render_template(
-                'index.html',
-                page=request.args['url'],
-                name=request.args['name']
-            )
-    else:
-        return render_template('index.html')
+    return render_template('index.html')
 
 
 @app.route('/bookmark', methods=['GET', 'POST'])
@@ -167,12 +154,29 @@ def bookmark():
             else:
                 for tag in tags:
                     tag_id = get_tag_id(tag)
-                    bookmark_tag_id = select_bookmark_tag_id(bookmark_id, tag_id)
+                    bookmark_tag_id = select_bookmark_tag_id(
+                        bookmark_id,
+                        tag_id
+                    )
                     if bookmark_tag_id is None:
                         insert_bookmark_tag(bookmark_id, tag_id)
             return redirect(request.form['url'])
         else:
-            return redirect(select_bookmark(name=request.args['name']))
+            bookmark_record = get_bookmark_record(url=request.args['url'])
+            if bookmark_record:
+                return render_template(
+                    'bookmark.html',
+                    options=bookmark_record['tags'],
+                    items=[item['tag'] for item in bookmark_record['tags']],
+                    page=bookmark_record['url'],
+                    name=bookmark_record['name']
+                )
+            else:
+                return render_template(
+                    'bookmark.html',
+                    page=request.args['url'],
+                    name=request.args['name']
+                )
 
 
 @app.route('/tag', methods=['GET', 'POST'])
@@ -195,14 +199,9 @@ def tag():
 @app.route('/search')
 def search():
     if 'authenticated' in session:
-        query_json = request.args.get('q')
-        query = json.loads(query_json)
-        for item in query:
-            cursor = g.db.execute(
-                'select id, name from bookmarks where name like ?', (item+'%',)
-            )
-        bookmarks = [{'id': row[0], 'text': row[1]} for row in cursor.fetchall()]
-        return json.dumps(bookmarks)
+        if 'tag_names' in request.args:
+            tag_names = request.args.get('tag_names').split(',')
+        return json.dumps(select_bookmarks_on_tagnames(tag_names))
 
 
 @app.route('/login', methods=['POST'])

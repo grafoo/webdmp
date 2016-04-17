@@ -1,23 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
-  <section id="editBookmark" class="row">
+  <section id="bookmark" class="row">
     <div class="well">
-      <form id="editBookmarkForm" action="/bookmark" method="post">
-      <div class="form-group">
-        <label for="websiteURL" class="control-label">url</label>
-        <input id="websiteURL" name="url" class="form-control" value="{{page}}">
-      </div>
+      <form id="bookmarkForm" action="/bookmark" method="post">
+        <div class="form-group">
+          <label for="websiteURL" class="control-label">url</label>
+          <input id="websiteURL" name="url" class="form-control" value="{{page}}">
+        </div>
      
-      <div class="form-group">
-        <label for="websiteTitle" class="control-label">name</label>
-        <input id="websiteTitle" name="name" type="text" class="form-control" value="{{name}}">
-      </div>
+        <div class="form-group">
+          <label for="websiteTitle" class="control-label">name</label>
+          <input id="websiteTitle" name="name" type="text" class="form-control" value="{{name}}">
+        </div>
     
-      <div class="form-group">
-        <label for="tagSearch" class="control-label">tags</label>
-        <select id="tagSearch" name="tag-list"></select>
-      </div>
-        <input class="btn btn-primary pull-right" type="submit" value="edit bookmark">
+        <div class="form-group">
+          <label for="tagSearch" class="control-label">tags</label>
+          <select id="tagSearch" name="tag-list"></select>
+        </div>
+        <input class="btn btn-primary pull-right" type="submit"
+          {% if options and items %}
+            value="edit bookmark"
+          {% else %}
+            value="save bookmark"
+          {% endif %}
+        >
       </form>
     </div>
   </section>
@@ -30,8 +36,10 @@
       valueField: 'tag',
       labelField: 'tag',
       searchField: ['tag'],
-      options: {{options|tojson}}, // e.g. options: [{tag: 'foo'}, {tag: 'bar'}],
-      items: {{items|tojson}}, // e.g. items: ['foo', 'bar'],
+      {% if options and items %}
+        options: {{options|tojson}}, // e.g. options: [{tag: 'foo'}, {tag: 'bar'}],
+        items: {{items|tojson}}, // e.g. items: ['foo', 'bar'],
+      {% endif %}
       render: {
         item: function(item, escape) {
           return '<div>' +

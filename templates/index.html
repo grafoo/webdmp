@@ -1,29 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-  <section id="save_bookmark" class="row">
+  <section id="resultBookmarks" class="row">
+    <div id="bookmarks" class="list-group">
+    </div>
+  </section>
+  <section id="searchBookmarks" class="row">
     <div class="well">
-    <form id="bookmark_form" action="/bookmark" method="post">
-      <div class="form-group">
-        <label for="website_url" class="control-label">url</label>
-        <input id="website_url" name="url" class="form-control" value="{{page}}">
-      </div>
-      
-      <div class="form-group">
-        <label for="website_name" class="control-label">name</label>
-        <input id="website_name" name="name" type="text" class="form-control" value="{{name}}">
-      </div>
-
+    <form id="searchBookmarkForm" action="/search" method="get">
       <div class="form-group">
         <label for="tagSearch" class="control-label">tags</label>
         <select id="tagSearch" name="tag-list"></select>
       </div>
-      <input class="btn btn-primary pull-right" type="submit" value="save bookmark">
+      <input class="btn btn-primary pull-right" type="submit" value="search">
     </form>
    </div>
   </section>
 
   <script>
-    $("#tagSearch").selectize({
+    var refreshView = function(tagNames) {
+      while (bookmarks.firstChild) {bookmarks.removeChild(bookmarks.firstChild);}
+        xhttp = new XMLHttpRequest();
+        xhttp.open('GET', 'search?tag_names=' + tagNames, true);
+        xhttp.send();
+        xhttp.onreadystatechange = function() {
+          if (xhttp.readyState == 4 && xhttp.status == 200) {
+            res = JSON.parse(xhttp.responseText);
+            res.forEach(function(item) {
+              bookmarks = document.getElementById('bookmarks');
+              link = document.createElement('a');
+              link.setAttribute('href', item.url);
+              link.setAttribute('class', 'list-group-item');
+              link.innerHTML = item.title;
+              bookmarks.appendChild(link);
+            });
+          }
+        }
+    }
+
+    var eventHandler = function(eventType) {
+      tagNames = [];
+      if (eventType === 'itemAdd') {
+          return function(name) {
+            tagNames.push(name);
+            refreshView(tagNames);
+          };
+      }
+      else if (eventType === 'itemRemove') {
+        return function(name) {
+          tagNames.pop(name);
+          if ( tagNames !== [] )
+            refreshView(tagNames);
+        };
+      }
+    };
+
+    $('#tagSearch').selectize({
       plugins: ['remove_button'],
       persist: false,
       maxItems: null,
@@ -42,9 +73,6 @@
             '</div>';
         }
       },
-      create: function(input) {
-        return {tag: input};
-      },
       load: function(query, callback) {
         if (!query.length) return callback();
         $.ajax({
@@ -58,7 +86,9 @@
             callback(tags);
           }
         });	
-      }	
+      },
+      onItemAdd: eventHandler('itemAdd'),
+      onItemRemove: eventHandler('itemRemove')
     });
   </script>
 {% endblock %}

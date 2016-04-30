@@ -177,6 +177,8 @@ def bookmark():
                     page=request.args['url'],
                     name=request.args['name']
                 )
+    else:
+        return render_template('base.html')
 
 
 @app.route('/tag', methods=['GET', 'POST'])

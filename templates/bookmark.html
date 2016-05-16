@@ -3,14 +3,20 @@
   <section id="bookmark" class="row">
     <div class="well">
       <form id="bookmarkForm" action="/bookmark" method="post">
-        <div class="form-group">
-          <label for="websiteURL" class="control-label">url</label>
-          <input id="websiteURL" name="url" class="form-control" value="{{page}}">
-        </div>
+        {% if not (options and items) %}
+          <div class="form-group">
+            <label for="websiteURL" class="control-label">url</label>
+            <input id="websiteURL" name="url" class="form-control" value="{{page}}" readonly>
+          </div>
+        {% endif %}
      
         <div class="form-group">
           <label for="websiteTitle" class="control-label">name</label>
-          <input id="websiteTitle" name="name" type="text" class="form-control" value="{{name}}">
+          {% if options and items %}
+            <input id="websiteTitle" name="name" type="text" class="form-control" value="{{name}}" readonly>
+          {% else %}
+            <input id="websiteTitle" name="name" type="text" class="form-control" value="{{name}}">
+          {% endif %}
         </div>
     
         <div class="form-group">

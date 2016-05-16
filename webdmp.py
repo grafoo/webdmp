@@ -26,7 +26,7 @@ def get_sqlite_database():
 def insert_bookmark(name='', url=''):
     try:
         g.db.execute(
-            'insert into bookmarks (name, url) values (?, ?)', [name, url]
+            'insert into bookmarks (name, url) values (?, ?)', (name, url,)
         )
         g.db.commit()
     except sqlite3.IntegrityError, e:
@@ -57,7 +57,7 @@ def get_tag_id(tag_name=''):
 def insert_bookmark_tag(bookmark_id, tag_id):
     g.db.execute(
         'insert into bookmark_tags (bookmark_id, tag_id) values (?, ?)',
-        [bookmark_id, tag_id]
+        (bookmark_id, tag_id,)
     )
     g.db.commit()
 
@@ -122,6 +122,32 @@ def select_bookmarks_on_tagnames(tagnames):
     return [{'url': row[0], 'title': row[1]} for row in cursor.fetchall()]
 
 
+def select_bookmark_id(url=''):
+    try:
+        return g.db.execute(
+            'select id from bookmarks where url = ?', (url,)
+        ).fetchone()[0]
+    except TypeError:
+        return None
+
+
+def select_bookmarktags_tagids(bookmark_id=0):
+    return [
+        x[0] for x in g.db.execute(
+            'select tag_id from bookmark_tags where bookmark_id = ?',
+            (bookmark_id,)
+        ).fetchall()
+    ]
+
+
+def delete_bookmark_tag(bookmark_id, tag_id):
+    g.db.execute(
+        'delete from bookmark_tags where bookmark_id = ? and tag_id = ?',
+        (bookmark_id, tag_id,)
+    )
+    g.db.commit()
+
+
 @app.before_request
 def before_request():
     g.db = get_sqlite_database()
@@ -143,24 +169,42 @@ def index():
 def bookmark():
     if 'authenticated' in session:
         if request.method == 'POST':
-            bookmark_id = insert_bookmark(
-                name=request.form['name'],
-                url=request.form['url']
-            )
+            name = request.form['name']
+            url = request.form['url']
             tags = request.form.getlist('tag-list')
-            if not tags:
-                tag_id = get_tag_id(tag_name='notag')
-                insert_bookmark_tag(bookmark_id, tag_id)
+
+            bookmark_id = select_bookmark_id(url)
+
+            # update bookmark
+            # todo: update bookmark name
+            if bookmark_id:
+                tagids_old = select_bookmarktags_tagids(bookmark_id)
+                tagids_new = [get_tag_id(tag) for tag in tags]
+
+                # tags to delete
+                for tag_id in set(tagids_old) - set(tagids_new):
+                    delete_bookmark_tag(bookmark_id, tag_id)
+
+                # tags to insert
+                for tag_id in set(tagids_new) - set(tagids_old):
+                    insert_bookmark_tag(bookmark_id, tag_id)
+
+            # insert bookmark
             else:
-                for tag in tags:
-                    tag_id = get_tag_id(tag)
-                    bookmark_tag_id = select_bookmark_tag_id(
-                        bookmark_id,
-                        tag_id
-                    )
-                    if bookmark_tag_id is None:
-                        insert_bookmark_tag(bookmark_id, tag_id)
-            return redirect(request.form['url'])
+                bookmark_id = insert_bookmark(name, url)
+                if not tags:
+                    tag_id = get_tag_id(tag_name='notag')
+                    insert_bookmark_tag(bookmark_id, tag_id)
+                else:
+                    for tag in tags:
+                        tag_id = get_tag_id(tag)
+                        bookmark_tag_id = select_bookmark_tag_id(
+                            bookmark_id,
+                            tag_id
+                        )
+                        if bookmark_tag_id is None:
+                            insert_bookmark_tag(bookmark_id, tag_id)
+            return redirect(url)
         else:
             bookmark_record = get_bookmark_record(url=request.args['url'])
             if bookmark_record:

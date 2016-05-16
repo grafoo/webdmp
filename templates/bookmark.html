@@ -3,12 +3,10 @@
   <section id="bookmark" class="row">
     <div class="well">
       <form id="bookmarkForm" action="/bookmark" method="post">
-        {% if not (options and items) %}
-          <div class="form-group">
+          <div class="form-group {% if options and items %} hidden {% endif %}">
             <label for="websiteURL" class="control-label">url</label>
             <input id="websiteURL" name="url" class="form-control" value="{{page}}" readonly>
           </div>
-        {% endif %}
      
         <div class="form-group">
           <label for="websiteTitle" class="control-label">name</label>

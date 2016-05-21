@@ -1,94 +1,106 @@
-{% extends "base.html" %}
-{% block content %}
-  <section id="resultBookmarks" class="row">
-    <div id="bookmarks" class="list-group">
-    </div>
-  </section>
-  <section id="searchBookmarks" class="row">
-    <div class="well">
-    <form id="searchBookmarkForm" action="/search" method="get">
-      <div class="form-group">
-        <label for="tagSearch" class="control-label">tags</label>
-        <select id="tagSearch" name="tag-list"></select>
-      </div>
-      <input class="btn btn-primary pull-right" type="submit" value="search">
-    </form>
-   </div>
-  </section>
+{{define "index"}}
+<!doctype html>
+<html lang="en">
+  {{template "head"}}
 
-  <script>
-    var refreshView = function(tagNames) {
-      while (bookmarks.firstChild) {bookmarks.removeChild(bookmarks.firstChild);}
-        xhttp = new XMLHttpRequest();
-        xhttp.open('GET', 'search?tag_names=' + tagNames, true);
-        xhttp.send();
-        xhttp.onreadystatechange = function() {
-          if (xhttp.readyState == 4 && xhttp.status == 200) {
-            res = JSON.parse(xhttp.responseText);
-            res.forEach(function(item) {
-              bookmarks = document.getElementById('bookmarks');
-              link = document.createElement('a');
-              link.setAttribute('href', item.url);
-              link.setAttribute('class', 'list-group-item');
-              link.innerHTML = item.title;
-              bookmarks.appendChild(link);
-            });
-          }
+  <body>
+    {{if false}}
+      <div class="container">
+        <section id="resultBookmarks" class="row">
+          <div id="bookmarks" class="list-group">
+          </div>
+        </section>
+        <section id="searchBookmarks" class="row">
+          <div class="well">
+            <form id="searchBookmarkForm" action="/search" method="get">
+              <div class="form-group">
+                <label for="tagSearch" class="control-label">tags</label>
+                <select id="tagSearch" name="tag-list"></select>
+              </div>
+              <input class="btn btn-primary pull-right" type="submit" value="search">
+            </form>
+         </div>
+        </section>
+    	</div>
+ 
+      <script>
+        var refreshView = function(tagNames) {
+          while (bookmarks.firstChild) {bookmarks.removeChild(bookmarks.firstChild);}
+            xhttp = new XMLHttpRequest();
+            xhttp.open('GET', 'search?tag_names=' + tagNames, true);
+            xhttp.send();
+            xhttp.onreadystatechange = function() {
+              if (xhttp.readyState == 4 && xhttp.status == 200) {
+                res = JSON.parse(xhttp.responseText);
+                res.forEach(function(item) {
+                  bookmarks = document.getElementById('bookmarks');
+                  link = document.createElement('a');
+                  link.setAttribute('href', item.url);
+                  link.setAttribute('class', 'list-group-item');
+                  link.innerHTML = item.title;
+                  bookmarks.appendChild(link);
+                });
+              }
+            }
         }
-    }
-
-    var eventHandler = function(eventType) {
-      tagNames = [];
-      if (eventType === 'itemAdd') {
-          return function(name) {
-            tagNames.push(name);
-            refreshView(tagNames);
-          };
-      }
-      else if (eventType === 'itemRemove') {
-        return function(name) {
-          tagNames.pop(name);
-          if ( tagNames !== [] )
-            refreshView(tagNames);
+    
+        var eventHandler = function(eventType) {
+          tagNames = [];
+          if (eventType === 'itemAdd') {
+              return function(name) {
+                tagNames.push(name);
+                refreshView(tagNames);
+              };
+          }
+          else if (eventType === 'itemRemove') {
+            return function(name) {
+              tagNames.pop(name);
+              if ( tagNames !== [] )
+                refreshView(tagNames);
+            };
+          }
         };
-      }
-    };
-
-    $('#tagSearch').selectize({
-      plugins: ['remove_button'],
-      persist: false,
-      maxItems: null,
-      valueField: 'tag',
-      labelField: 'tag',
-      searchField: ['tag'],
-      render: {
-        item: function(item, escape) {
-          return '<div>' +
-            '<span class="tag">' + escape(item.tag) + '</span>' +
-            '</div>';
-        },
-        option: function(item, escape) {
-          return '<div>' +
-            '<span class="tag">' + escape(item.tag) + '</span>' +
-            '</div>';
-        }
-      },
-      load: function(query, callback) {
-        if (!query.length) return callback();
-        $.ajax({
-          url: '/tag?query=' + encodeURIComponent(query),
-          type: 'GET',
-          error: function() {
-            callback();
+    
+        $('#tagSearch').selectize({
+          plugins: ['remove_button'],
+          persist: false,
+          maxItems: null,
+          valueField: 'tag',
+          labelField: 'tag',
+          searchField: ['tag'],
+          render: {
+            item: function(item, escape) {
+              return '<div>' +
+                '<span class="tag">' + escape(item.tag) + '</span>' +
+                '</div>';
+            },
+            option: function(item, escape) {
+              return '<div>' +
+                '<span class="tag">' + escape(item.tag) + '</span>' +
+                '</div>';
+            }
           },
-          success: function(result) {
-            var tags = JSON.parse(result);
-            callback(tags);
-          }
-        });	
-      },
-      onItemAdd: eventHandler('itemAdd'),
-      onItemRemove: eventHandler('itemRemove')
-    });
-  </script>
-{% endblock %}
+          load: function(query, callback) {
+            if (!query.length) return callback();
+            $.ajax({
+              url: '/tag?query=' + encodeURIComponent(query),
+              type: 'GET',
+              error: function() {
+                callback();
+              },
+              success: function(result) {
+                var tags = JSON.parse(result);
+                callback(tags);
+              }
+            });	
+          },
+          onItemAdd: eventHandler('itemAdd'),
+          onItemRemove: eventHandler('itemRemove')
+        });
+      </script>
+    {{else}}
+      {{template "login"}}
+    {{end}}
+  </body>
+</html>
+{{end}}
